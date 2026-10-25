@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dna-sequence-toolkit"
+version = "0.1.0"
+description = "A small, dependency-free toolkit for common DNA sequence analyses."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Manoj Kumar Mansingh" }]
+keywords = ["bioinformatics", "dna", "sequence-analysis", "genomics", "python"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "License :: OSI Approved :: MIT License",
+]
+
+[project.scripts]
+dna-toolkit = "dna_toolkit.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["dna_toolkit*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
