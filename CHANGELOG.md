@@ -8,6 +8,14 @@ and the project follows [semantic versioning](https://semver.org/).
 
 ### Changed
 
+- **CI now runs the web interface tests.** `tests/test_app.py` executes in a
+  dedicated `web-app` job on Python 3.12 with `requirements.txt` and
+  `requirements-dev.txt` installed, and the job fails if any app test is skipped.
+  The core pytest matrix ignores the app module explicitly, so it stays free of
+  Streamlit and pandas.
+
+### Changed
+
 - **Redesigned Streamlit interface**: deep navy, cyan and off-white palette,
   navy hero header with version and live status chips, a monospaced sequence
   workspace with Analyse, Load example and Clear, and responsive metric-card
