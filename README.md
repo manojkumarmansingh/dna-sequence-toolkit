@@ -4,7 +4,7 @@
 
 # DNA Sequence Analysis Toolkit
 
-**A small, dependency-free Python toolkit for common DNA sequence analyses — with a command line and a web interface.**
+**A small, dependency-free Python toolkit for common DNA sequence analyses, with a command line and a web interface.**
 
 [![tests](https://github.com/manojkumarmansingh/dna-sequence-toolkit/actions/workflows/tests.yml/badge.svg)](https://github.com/manojkumarmansingh/dna-sequence-toolkit/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -17,8 +17,8 @@
 
 ## Introduction
 
-This project takes a DNA sequence — pasted in, uploaded as FASTA, or read from a
-file on disk — and answers the questions you would normally reach for a
+This project takes a DNA sequence, whether pasted in, uploaded as FASTA, or read
+from a file on disk, and answers the questions you would normally reach for a
 bioinformatics suite to answer: what is its GC content, what does it translate
 to, where are its open reading frames, and which restriction enzymes cut it.
 
@@ -43,12 +43,12 @@ Three ways to use it, all backed by the same functions:
 | **GC content** | GC as a percentage | Ambiguous bases excluded from the denominator |
 | **Molecular weight** | Approximate single-strand DNA mass in Da | N contributes no mass |
 | **Reverse complement** | Standard base pairing, mixed case and N supported | Palindromes map to themselves |
-| **Transcription** | DNA → RNA (T → U) | — |
+| **Transcription** | DNA → RNA (T → U) | Standard pairing |
 | **Translation** | Codon → protein, any reading frame | Standard genetic code (table 1); unknown codons → `X` |
 | **ORF finding** | Start codon to first in-frame stop, both strands, all 3 frames | Configurable start codons (e.g. add GTG, TTG) |
 | **Restriction mapping** | 12 common enzymes, or your own set | Optional circular-molecule mode |
 | **FASTA parsing** | Single or multi-record files | Validates each record and names the one that failed |
-| **k-mer counting** | Counts of every k-mer for any k | — |
+| **k-mer counting** | Counts of every k-mer for any k | Any k up to the sequence length |
 | **Downloads** | CSV and FASTA export from the web app | Summary available as JSON |
 
 ## How it works
@@ -74,7 +74,7 @@ flowchart LR
 
 ## Installation
 
-**Library and command line only** — nothing to install beyond Python 3.9+:
+**Library and command line only:** nothing to install beyond Python 3.9+.
 
 ```bash
 git clone https://github.com/manojkumarmansingh/dna-sequence-toolkit.git
@@ -97,8 +97,8 @@ streamlit run app.py
 
 Then open the URL Streamlit prints (usually `http://localhost:8501`).
 
-The app has a sidebar for input — a built-in sample, a pasted sequence, or an
-uploaded FASTA file — and six tabs: **Overview**, **Composition**, **Transform**,
+The app has a sidebar for input (a built-in sample, a pasted sequence, or an
+uploaded FASTA file) and six tabs: **Overview**, **Composition**, **Transform**,
 **Translate**, **ORFs** and **Restriction sites**. Every result table can be
 downloaded as CSV, and sequences can be exported as FASTA.
 
@@ -106,7 +106,7 @@ Input is validated before any analysis runs, so a stray `X` produces a message
 naming the offending character rather than a traceback.
 
 > **Screenshots:** the `docs/screenshots/` folder is where they belong, but none
-> are committed yet — capture them from your own run of the app (see
+> are committed yet. Capture them from your own run of the app (see
 > [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#screenshots)) rather than trusting a
 > placeholder image.
 
@@ -288,12 +288,12 @@ screenshots, are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 ## Contributing
 
 Issues and pull requests are welcome. If you are changing an analysis function,
-please add a test that fails before your change and passes after it — the
+please add a test that fails before your change and passes after it. The
 `tests/` folder is the best documentation of the intended behaviour.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
 
 ## Author
 
