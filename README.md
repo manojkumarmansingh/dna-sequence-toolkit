@@ -1,32 +1,80 @@
+<div align="center">
+
+<img src="docs/banner.png" alt="DNA Sequence Analysis Toolkit" width="100%">
+
 # DNA Sequence Analysis Toolkit
 
-A small, dependency-free Python toolkit for common DNA sequence analyses:
-composition and GC content, reverse complement, transcription, translation,
-open-reading-frame (ORF) finding, restriction-site mapping, k-mer counting and
-FASTA parsing.
-
-It ships with both a Python API and a command-line interface, and the whole
-package runs on the Python standard library alone — nothing to install beyond
-Python itself.
+**A small, dependency-free Python toolkit for common DNA sequence analyses — with a command line and a web interface.**
 
 [![tests](https://github.com/manojkumarmansingh/dna-sequence-toolkit/actions/workflows/tests.yml/badge.svg)](https://github.com/manojkumarmansingh/dna-sequence-toolkit/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-app-FF4B4B.svg)](app.py)
+
+</div>
+
+---
+
+## Introduction
+
+This project takes a DNA sequence — pasted in, uploaded as FASTA, or read from a
+file on disk — and answers the questions you would normally reach for a
+bioinformatics suite to answer: what is its GC content, what does it translate
+to, where are its open reading frames, and which restriction enzymes cut it.
+
+The analysis engine is pure Python: **no NumPy, no Biopython, no third-party
+runtime dependencies**. That is a deliberate choice. Reading the code should
+teach you how each calculation actually works, rather than showing you a call
+into a library that hides the biology.
+
+Three ways to use it, all backed by the same functions:
+
+| Interface | Entry point | Best for |
+| --- | --- | --- |
+| Python library | `from dna_toolkit import ...` | Scripts, notebooks, pipelines |
+| Command line | `python -m dna_toolkit` | Quick checks, shell pipelines |
+| Web app | `streamlit run app.py` | Exploring a sequence without writing code |
 
 ## Features
 
-- **Composition** — nucleotide counts and fractions, GC content (with `N`
-  handled correctly), approximate molecular weight.
-- **Transformation** — reverse complement, DNA→RNA transcription, and
-  translation in any reading frame.
-- **ORF finding** — scans all three reading frames on both strands and reports
-  coordinates mapped back to the original sequence.
-- **Restriction mapping** — a built-in set of common enzymes (EcoRI, BamHI,
-  HindIII, NotI, PstI, SalI, XhoI, KpnI, SacI, SmaI, XbaI, NcoI) plus support
-  for your own.
-- **FASTA** — reads single- or multi-record FASTA files.
-- **CLI + library** — usable from the shell or imported into a notebook.
-- **Tested** — 25 unit tests, run in CI across Python 3.9–3.12.
+| Feature | What it does | Notes |
+| --- | --- | --- |
+| **Base composition** | Counts and fractions for A, C, G, T and N | Fractions always sum to 1 |
+| **GC content** | GC as a percentage | Ambiguous bases excluded from the denominator |
+| **Molecular weight** | Approximate single-strand DNA mass in Da | N contributes no mass |
+| **Reverse complement** | Standard base pairing, mixed case and N supported | Palindromes map to themselves |
+| **Transcription** | DNA → RNA (T → U) | — |
+| **Translation** | Codon → protein, any reading frame | Standard genetic code (table 1); unknown codons → `X` |
+| **ORF finding** | Start codon to first in-frame stop, both strands, all 3 frames | Configurable start codons (e.g. add GTG, TTG) |
+| **Restriction mapping** | 12 common enzymes, or your own set | Optional circular-molecule mode |
+| **FASTA parsing** | Single or multi-record files | Validates each record and names the one that failed |
+| **k-mer counting** | Counts of every k-mer for any k | — |
+| **Downloads** | CSV and FASTA export from the web app | Summary available as JSON |
+
+## How it works
+
+```mermaid
+flowchart LR
+    A["FASTA file<br/>pasted text<br/>sample sequence"] --> B{"Input validation<br/>ACGTN only"}
+    B -- invalid --> E["Clear error message<br/>names the bad character<br/>or record"]
+    B -- valid --> C["dna_toolkit core<br/>(pure Python)"]
+
+    C --> D1["Composition<br/>& GC"]
+    C --> D2["Reverse complement<br/>& transcription"]
+    C --> D3["Translation"]
+    C --> D4["ORF finding"]
+    C --> D5["Restriction<br/>mapping"]
+
+    D1 --> F["CLI output · Streamlit tables<br/>CSV / FASTA / JSON downloads"]
+    D2 --> F
+    D3 --> F
+    D4 --> F
+    D5 --> F
+```
 
 ## Installation
+
+**Library and command line only** — nothing to install beyond Python 3.9+:
 
 ```bash
 git clone https://github.com/manojkumarmansingh/dna-sequence-toolkit.git
@@ -34,18 +82,38 @@ cd dna-sequence-toolkit
 pip install -e .
 ```
 
-Or just run it in place — there are no third-party runtime dependencies:
+**With the web interface:**
 
 ```bash
-python -m dna_toolkit --help
+pip install -r requirements.txt
+streamlit run app.py
 ```
 
-## Command-line usage
+## Web app
 
-All commands accept either a sequence directly (`-s`) or a FASTA file
-(`-i`), and `--record NAME` to pick a specific record from a FASTA file.
+```bash
+streamlit run app.py
+```
 
-### Summary statistics
+Then open the URL Streamlit prints (usually `http://localhost:8501`).
+
+The app has a sidebar for input — a built-in sample, a pasted sequence, or an
+uploaded FASTA file — and six tabs: **Overview**, **Composition**, **Transform**,
+**Translate**, **ORFs** and **Restriction sites**. Every result table can be
+downloaded as CSV, and sequences can be exported as FASTA.
+
+Input is validated before any analysis runs, so a stray `X` produces a message
+naming the offending character rather than a traceback.
+
+> **Screenshots:** the `docs/screenshots/` folder is where they belong, but none
+> are committed yet — capture them from your own run of the app (see
+> [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md#screenshots)) rather than trusting a
+> placeholder image.
+
+## Command line
+
+Every command accepts either a sequence (`-s`) or a FASTA file (`-i`), plus
+`--record NAME` to pick a record from a multi-record file.
 
 ```bash
 python -m dna_toolkit stats -i examples/example.fasta --min-orf-aa 1
@@ -60,97 +128,57 @@ ORFs (>= 1 aa): 1
 Restriction sites: {'EcoRI': [25], 'BamHI': [31], 'HindIII': [18]}
 ```
 
-Add `--json` for machine-readable output.
-
-### GC content
+<details>
+<summary>More commands</summary>
 
 ```bash
 python -m dna_toolkit gc -s ATGCGCAT
-```
+# GC content (%): 50.0
 
-```
-GC content (%): 50.0
-Base counts: {'A': 2, 'C': 2, 'G': 2, 'N': 0, 'T': 2}
-```
-
-### Reverse complement
-
-```bash
 python -m dna_toolkit revcomp -s ATGCGT
-```
+# ACGCAT
 
-```
-ACGCAT
-```
-
-### Translation
-
-```bash
 python -m dna_toolkit translate -s ATGGCTAAACGTACGTTAAGCTTCGAATTCGGATCCAAATAA
-```
+# Protein: MAKRTLSFEFGSK
 
-```
-Frame: 0
-Protein: MAKRTLSFEFGSK
-```
-
-### Open reading frames
-
-```bash
 python -m dna_toolkit orfs -i examples/example.fasta --min-aa 1
-```
+# 1 ORF(s) of at least 1 aa:
+#   strand +  frame 1  1-42  13 aa
+#     MAKRTLSFEFGSK*
 
-```
-1 ORF(s) of at least 1 aa:
-  strand +  frame 1  1-42  13 aa
-    MAKRTLSFEFGSK*
-```
-
-### Restriction sites
-
-```bash
 python -m dna_toolkit digest -s GAATTCGGATCCAAGCTT
-```
+# EcoRI    [1]
+# BamHI    [7]
+# HindIII  [13]
 
-```
-Restriction sites (1-based positions on the forward strand):
-  EcoRI    [1]
-  BamHI    [7]
-  HindIII  [13]
-```
-
-### k-mer counts
-
-```bash
 python -m dna_toolkit kmers -s ATAT -k 2
+# AT	2
+# TA	1
 ```
 
-```
-AT	2
-TA	1
-```
+</details>
 
-## Python usage
+## Python library
 
 ```python
 from dna_toolkit import gc_content, reverse_complement, translate, find_orfs
 
 seq = "ATGGCTAAACGTACGTTAAGCTTCGAATTCGGATCCAAATAA"
 
-print(gc_content(seq))          # 38.095238095238095
-print(reverse_complement(seq))  # TTATTTGGATCCGAATTCGAAGCTTAACGTACGTTTAGCCAT
-print(translate(seq, stop_at_stop=True))  # MAKRTLSFEFGSK
+print(gc_content(seq))                     # 38.095238095238095
+print(reverse_complement(seq))             # TTATTTGGATCCGAATTCGAAGCTTAACGTACGTTTAGCCAT
+print(translate(seq, stop_at_stop=True))   # MAKRTLSFEFGSK
 
-for orf in find_orfs(seq, min_aa=1):
+for orf in find_orfs(seq, min_aa=10):
     print(orf["strand"], orf["start"], orf["end"], orf["protein"])
 ```
 
-## API overview
+### API reference
 
 | Function | Purpose |
 | --- | --- |
 | `clean_sequence(seq)` | Uppercase and strip whitespace |
-| `validate_sequence(seq)` | Check the sequence is non-empty and valid DNA |
+| `validate_sequence(seq)` | Reject empty input or characters outside ACGTN |
 | `base_composition(seq)` | Counts and fractions per base |
 | `gc_content(seq)` | GC content as a percentage |
 | `molecular_weight(seq)` | Approximate single-strand DNA mass (Da) |
@@ -158,50 +186,115 @@ for orf in find_orfs(seq, min_aa=1):
 | `reverse_complement(seq)` | Reverse complement |
 | `transcribe(seq)` | DNA → RNA |
 | `translate(seq, frame, stop_at_stop)` | Translate to protein |
-| `find_orfs(seq, min_aa)` | ORFs on both strands |
-| `find_restriction_sites(seq, enzymes)` | Restriction-site positions |
+| `find_orfs(seq, min_aa, start_codons)` | ORFs on both strands |
+| `find_restriction_sites(seq, enzymes, circular)` | Restriction-site positions |
 | `read_fasta(path)` / `read_fasta_string(text)` | Parse FASTA |
 | `summarize(seq, min_orf_aa)` | One-call summary report |
 
-Coordinates are **1-based and inclusive** throughout.
+Coordinates are **1-based and inclusive** throughout, and ORFs found on the
+minus strand are reported in the coordinates of the sequence you supplied.
+
+## Scientific notes and limitations
+
+These are the honest boundaries of what the toolkit does. They are also
+documented in the docstrings of the functions they apply to.
+
+- **Genetic code.** Translation uses the standard code (NCBI table 1) only.
+  Mitochondrial and alternative tables are not implemented.
+- **Start codons.** ORF finding defaults to `ATG`. Bacterial genes often use
+  `GTG` or `TTG`, which you can enable with `start_codons={"ATG", "GTG", "TTG"}`.
+  Note that a GTG start still translates to valine under table 1, even though it
+  acts as a start codon.
+- **ORF definition.** An ORF runs from a start codon to the *first* in-frame
+  stop. After a stop is found, scanning resumes past it, so ORFs reported within
+  one frame do not overlap. This is a simplification: real annotation considers
+  nested and overlapping ORFs, and the toolkit does not.
+- **GC content.** Ambiguous bases (N) are excluded from the denominator.
+  Counting them as non-GC would understate the GC fraction of the known bases.
+- **Molecular weight.** An approximation for single-stranded DNA. Ambiguous
+  bases contribute zero mass, so sequences containing N are underestimated.
+- **Restriction sites.** Forward strand only. No modelling of DNA methylation,
+  star activity, or the cut offset within the recognition site. Circular mode
+  detects sites spanning the origin but still reports forward-strand positions.
+- **FASTA parsing.** Supports headers, multi-record files, CRLF line endings,
+  blank lines and lowercase sequence. It does not parse GenBank, EMBL or FASTQ.
+- **Scale.** Everything is pure Python and in-memory. There is no streaming, so
+  very large genomes will be slow; this is a teaching and small-analysis tool,
+  not a replacement for a production pipeline.
+
+Nothing in this repository has been benchmarked against an established tool.
+If you need validated production results, use Biopython, samtools or a
+reference pipeline and treat this as the learning implementation it is.
 
 ## Project structure
 
 ```
 dna-sequence-toolkit/
+├── app.py                      # Streamlit web interface
 ├── dna_toolkit/
-│   ├── __init__.py      # public API
-│   ├── core.py          # sequence-analysis functions
-│   ├── cli.py           # command-line interface
-│   └── __main__.py      # enables `python -m dna_toolkit`
-├── tests/
-│   └── test_core.py     # 25 unit tests
+│   ├── __init__.py             # public API
+│   ├── core.py                 # all sequence analysis
+│   ├── cli.py                  # command-line interface
+│   └── __main__.py             # enables `python -m dna_toolkit`
 ├── examples/
-│   └── example.fasta
+│   ├── example.fasta
+│   └── samples.py              # demo sequences used by the app
+├── tests/
+│   ├── test_core.py            # core behaviour
+│   └── test_edge_cases.py      # boundaries and tricky biology
+├── docs/
+│   ├── banner.png
+│   ├── make_banner.py
+│   └── DEPLOYMENT.md
 ├── .github/workflows/tests.yml
-├── pyproject.toml
-└── README.md
+├── .streamlit/config.toml
+├── requirements.txt            # web app dependencies
+├── requirements-dev.txt        # test dependencies
+└── pyproject.toml
 ```
 
-## Running the tests
+## Testing
 
 ```bash
 pip install -r requirements-dev.txt
 python -m pytest -q
 ```
 
-## Notes and limitations
+The suite currently holds **61 tests**, covering the core behaviour plus edge
+cases: sequences shorter than a codon, all-ambiguous input, palindromes,
+reverse-strand ORF coordinates, alternative start codons, restriction sites
+spanning the origin of a circular molecule, CRLF FASTA files, and records that
+fail validation. CI runs them on Python 3.9, 3.10, 3.11 and 3.12.
 
-- ORF finding uses the standard genetic code (translation table 1) with `ATG`
-  as the only start codon and `TAA`/`TAG`/`TGA` as stops.
-- Restriction-site mapping is done on the forward strand only; it does not
-  account for methylation or star activity.
-- Molecular weight is an approximation for single-stranded DNA.
+## Deployment
+
+The web app is ready for Streamlit Community Cloud. Short version:
+
+1. Push this repository to GitHub (public).
+2. Go to [share.streamlit.io](https://share.streamlit.io), sign in with GitHub.
+3. **New app** → choose this repository → branch `main` → main file `app.py`.
+4. Deploy. Dependencies come from `requirements.txt`.
+
+Full steps, including how to test the build locally and how to capture
+screenshots, are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+> This app is **not** deployed yet. No live URL is claimed here.
+
+## Suggested repository topics
+
+`bioinformatics` · `dna` · `sequence-analysis` · `genomics` · `python` ·
+`streamlit` · `cli` · `orf-finding` · `restriction-enzymes` · `teaching`
+
+## Contributing
+
+Issues and pull requests are welcome. If you are changing an analysis function,
+please add a test that fails before your change and passes after it — the
+`tests/` folder is the best documentation of the intended behaviour.
 
 ## License
 
-Released under the MIT License. See [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).
 
 ## Author
 
-Manoj Kumar Mansingh — [GitHub](https://github.com/manojkumarmansingh)
+Manoj Kumar Mansingh · [GitHub](https://github.com/manojkumarmansingh)
