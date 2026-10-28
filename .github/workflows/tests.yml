@@ -10,6 +10,7 @@ jobs:
     name: pytest (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
@@ -18,21 +19,42 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
       - name: Install test dependencies
-        run: pip install pytest
-      - name: Run tests
-        run: python -m pytest -q
+        run: pip install -r requirements-dev.txt
+      # The core engine needs no third-party packages, so this job stays lean.
+      # Web interface tests live in the web-app job below.
+      - name: Run core tests
+        run: python -m pytest -q --ignore=tests/test_app.py
 
-  app-import:
-    name: web app imports
+  web-app:
+    name: web app tests (Python 3.12)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install web dependencies
-        run: pip install -r requirements.txt
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install web and test dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
       - name: Check that app.py imports cleanly
         run: python -c "import app; print('app.py imported OK')"
+      # tests/test_app.py skips itself when Streamlit is missing, so run it here
+      # and fail the build if any test was skipped instead of executed.
+      - name: Run web app tests
+        run: |
+          set -o pipefail
+          python -m pytest tests/test_app.py -q -rs | tee app-tests.log
+      - name: Fail if any app test was skipped
+        run: |
+          if grep -qi "skipped" app-tests.log; then
+            echo "::error::Web app tests were skipped; Streamlit is probably missing."
+            exit 1
+          fi
+          echo "No app tests were skipped."
