@@ -97,10 +97,17 @@ streamlit run app.py
 
 Then open the URL Streamlit prints (usually `http://localhost:8501`).
 
-The app has a sidebar for input (a built-in sample, a pasted sequence, or an
-uploaded FASTA file) and six tabs: **Overview**, **Composition**, **Transform**,
-**Translate**, **ORFs** and **Restriction sites**. Every result table can be
-downloaded as CSV, and sequences can be exported as FASTA.
+The interface opens with a navy header carrying the version and a status chip
+for the loaded sequence, then a monospaced sequence workspace with **Analyse
+sequence**, **Load example** and **Clear** buttons. Picking a built-in sample or
+uploading a FASTA file loads and analyses it in one click.
+
+Seven sections follow, selected from a horizontal tool bar that wraps on narrow
+screens: **Overview**, **Composition**, **Transform**, **Translation**, **ORFs**,
+**Restriction sites** and **k-mer analysis**. Overview and every other section
+lead with a responsive grid of metric cards (length, GC content, molecular
+weight, ORF count) that reflows on mobile, and every result table can be
+downloaded as CSV, sequences as FASTA, and the summary as JSON.
 
 Input is validated before any analysis runs, so a stray `X` produces a message
 naming the offending character rather than a traceback.
@@ -241,7 +248,8 @@ dna-sequence-toolkit/
 │   └── samples.py              # demo sequences used by the app
 ├── tests/
 │   ├── test_core.py            # core behaviour
-│   └── test_edge_cases.py      # boundaries and tricky biology
+│   ├── test_edge_cases.py      # boundaries and tricky biology
+│   └── test_app.py             # web interface smoke tests (AppTest)
 ├── docs/
 │   ├── banner.png
 │   ├── make_banner.py
@@ -260,11 +268,17 @@ pip install -r requirements-dev.txt
 python -m pytest -q
 ```
 
-The suite currently holds **61 tests**, covering the core behaviour plus edge
+The suite currently holds **75 tests**, covering the core behaviour plus edge
 cases: sequences shorter than a codon, all-ambiguous input, palindromes,
 reverse-strand ORF coordinates, alternative start codons, restriction sites
 spanning the origin of a circular molecule, CRLF FASTA files, and records that
 fail validation. CI runs them on Python 3.9, 3.10, 3.11 and 3.12.
+
+`tests/test_app.py` drives the web app itself through Streamlit's `AppTest`
+harness: it boots the script, loads and analyses a sequence, opens every section,
+and checks the friendly error path, the Clear button and multi-record FASTA
+handling. The module skips itself when Streamlit is not installed, so the core
+test job stays dependency-free.
 
 ## Deployment
 
