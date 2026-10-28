@@ -6,12 +6,12 @@ and the project follows [semantic versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.2.0] — 2026-10-28
+## [0.2.0] - 2026-10-28
 
 ### Added
 
-- **Streamlit web interface** (`app.py`) with six tabs — Overview, Composition,
-  Transform, Translate, ORFs and Restriction sites — plus a sample sequence
+- **Streamlit web interface** (`app.py`) with six tabs (Overview, Composition,
+  Transform, Translate, ORFs and Restriction sites), plus a sample sequence
   picker, paste box and FASTA upload.
 - **Downloads** from the web app: CSV for tables, FASTA for sequences, JSON for
   the summary report.
@@ -20,7 +20,7 @@ and the project follows [semantic versioning](https://semver.org/).
 - **Circular molecule mode** for restriction mapping via
   `find_restriction_sites(..., circular=True)`, which detects sites spanning the
   origin.
-- **`examples/samples.py`** — short synthetic demo sequences used by the app.
+- **`examples/samples.py`**: short synthetic demo sequences used by the app.
 - **Edge-case test suite** (`tests/test_edge_cases.py`): 36 tests covering
   boundaries, ambiguous bases, reverse-strand ORF coordinates, alternative start
   codons, circular digests and FASTA parsing.
@@ -51,7 +51,7 @@ The public API is unchanged. All new behaviour is opt-in through keyword
 arguments with defaults that reproduce version 0.1.0 behaviour. The existing
 25 tests pass without modification.
 
-## [0.1.0] — 2026-10-25
+## [0.1.0] - 2026-10-25
 
 ### Added
 
