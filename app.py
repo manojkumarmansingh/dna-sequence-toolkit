@@ -331,7 +331,7 @@ def main() -> None:
         record_name = next(iter(records))
 
     seq = records[record_name]
-    st.caption(f"Loaded **{record_name}** — {len(seq):,} bp")
+    st.caption(f"Loaded **{record_name}** ({len(seq):,} bp)")
 
     tabs = st.tabs(
         ["Overview", "Composition", "Transform", "Translate", "ORFs", "Restriction sites"]
