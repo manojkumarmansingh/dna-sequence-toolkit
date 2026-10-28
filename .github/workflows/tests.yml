@@ -7,6 +7,7 @@ on:
 
 jobs:
   test:
+    name: pytest (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -21,3 +22,17 @@ jobs:
         run: pip install pytest
       - name: Run tests
         run: python -m pytest -q
+
+  app-import:
+    name: web app imports
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install web dependencies
+        run: pip install -r requirements.txt
+      - name: Check that app.py imports cleanly
+        run: python -c "import app; print('app.py imported OK')"
