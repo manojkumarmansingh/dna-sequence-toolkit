@@ -2,8 +2,9 @@
 
 How to put the Streamlit interface online, and how to check it before you do.
 
-> **Status:** the app has not been deployed. Nothing in this repository claims a
-> live URL. Once you deploy, add the real link to the README yourself.
+> **Status:** deployed. The live app is
+> <https://dnasequencetoolkit.streamlit.app/>, built from the `main` branch with
+> `app.py` as the entry point. Pushing to `main` triggers a redeploy.
 
 ## 1. Check it runs locally first
 
@@ -15,7 +16,7 @@ streamlit run app.py
 Streamlit prints a local URL (usually <http://localhost:8501>). Open it and
 confirm:
 
-- the sample sequence loads and the six tabs populate;
+- the sample sequence loads and the seven sections populate;
 - pasting `ATGCX` produces an error message rather than a crash;
 - uploading a two-record FASTA gives you a record selector;
 - a CSV download actually downloads.

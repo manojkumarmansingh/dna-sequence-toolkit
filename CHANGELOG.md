@@ -6,6 +6,27 @@ and the project follows [semantic versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Redesigned Streamlit interface**: deep navy, cyan and off-white palette,
+  navy hero header with version and live status chips, a monospaced sequence
+  workspace with Analyse, Load example and Clear, and responsive metric-card
+  grids that reflow on mobile.
+- **Seven analysis sections**: k-mer analysis moved out of Composition into its
+  own section, with a frequency chart, a top-12 ranking and CSV export.
+- **Samples and uploads** now load and analyse in one click instead of needing a
+  second press of Analyse.
+- Table downloads and the scientific-limitations panel are unchanged; every
+  number still comes from `dna_toolkit.core`.
+
+### Added
+
+- **`tests/test_app.py`**: 14 tests driving the real script through Streamlit's
+  `AppTest` harness (boot, load, analyse, every section, invalid input, Clear,
+  multi-record FASTA). Skipped automatically when Streamlit is not installed.
+- **`.streamlit/config.toml`** now pins the palette: navy primary, off-white
+  canvas and a light slate sidebar.
+
 ## [0.2.0] - 2026-10-28
 
 ### Added
