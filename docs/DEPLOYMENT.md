@@ -55,17 +55,17 @@ First build usually takes a couple of minutes.
 | `requirements-dev.txt` | local testing / CI | `pytest` |
 | `pyproject.toml` | `pip install -e .` | the `dna_toolkit` package itself |
 
-`dna_toolkit` has no third-party runtime dependencies — `requirements.txt`
+`dna_toolkit` has no third-party runtime dependencies; `requirements.txt`
 exists only for the web interface.
 
 ## 5. Common problems
 
-- **`ModuleNotFoundError: dna_toolkit`** — the app imports the package from the
+- **`ModuleNotFoundError: dna_toolkit`**: the app imports the package from the
   repository root. Deploy from the repository root, not a subfolder, and make
   sure `app.py` sits at the top level.
-- **`ModuleNotFoundError: examples`** — `app.py` already falls back gracefully,
+- **`ModuleNotFoundError: examples`**: `app.py` already falls back gracefully,
   but the sample picker needs `examples/samples.py` in the repository.
-- **App sleeps** — free-tier apps sleep after a period of inactivity; the next
+- **App sleeps**: free-tier apps sleep after a period of inactivity; the next
   visitor triggers a cold start.
 
 ## 6. Screenshots
@@ -93,7 +93,7 @@ When you are happy with the deployment, publish a GitHub release:
 
 1. **Releases** → **Draft a new release**.
 2. Tag: `v0.2.0` (create it on publish).
-3. Title: `v0.2.0 — Streamlit interface and hardened core`.
+3. Title: `v0.2.0: Streamlit interface and hardened core`.
 4. Paste the `[0.2.0]` section from [CHANGELOG.md](../CHANGELOG.md).
 
 Suggested one-paragraph summary:
