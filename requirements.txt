@@ -1,0 +1,4 @@
+# Runtime dependencies for the Streamlit web interface.
+# The dna_toolkit package itself needs only the Python standard library.
+streamlit>=1.30
+pandas>=2.0

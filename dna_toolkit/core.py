@@ -5,16 +5,23 @@ anywhere without third-party dependencies.
 
 All coordinate values returned by this module are 1-based and inclusive,
 following the convention used in biology.
+
+Public API
+----------
+This module is intentionally stable: the functions listed in ``__all__`` keep
+their existing signatures. New behaviour is added through optional keyword
+arguments with backwards-compatible defaults.
 """
 
 from __future__ import annotations
 
-from typing import Dict, Iterator, List, Tuple
+from typing import Dict, Iterable, List, Optional, Set
 
 __all__ = [
     "DNA_ALPHABET",
     "STOP_CODONS",
     "START_CODON",
+    "START_CODONS",
     "RESTRICTION_ENZYMES",
     "clean_sequence",
     "validate_sequence",
@@ -63,6 +70,7 @@ CODON_TABLE: Dict[str, str] = {
 }
 
 START_CODON = "ATG"
+START_CODONS: Set[str] = {START_CODON}
 STOP_CODONS = {"TAA", "TAG", "TGA"}
 
 # A small, commonly used set of restriction enzymes and their recognition sites.
@@ -96,8 +104,15 @@ def clean_sequence(sequence: str) -> str:
     return "".join(sequence.split()).upper()
 
 
-def validate_sequence(sequence: str, alphabet: set = DNA_ALPHABET) -> str:
+def validate_sequence(sequence: str, alphabet: Set[str] = DNA_ALPHABET) -> str:
     """Validate and normalise a sequence.
+
+    Args:
+        sequence: the raw sequence; case and whitespace are ignored.
+        alphabet: the allowed set of characters. Defaults to ACGTN.
+
+    Returns:
+        The cleaned (uppercase, whitespace-free) sequence.
 
     Raises:
         ValueError: if the sequence is empty or contains characters that are
@@ -121,7 +136,11 @@ def validate_sequence(sequence: str, alphabet: set = DNA_ALPHABET) -> str:
 # --------------------------------------------------------------------------
 
 def base_composition(sequence: str) -> Dict[str, object]:
-    """Return nucleotide counts and fractions for a DNA sequence."""
+    """Return nucleotide counts and fractions for a DNA sequence.
+
+    Ambiguous bases (N) are counted separately and included in the length and
+    fractions, so the fractions always sum to 1.
+    """
     seq = validate_sequence(sequence)
     counts = {base: seq.count(base) for base in sorted(DNA_ALPHABET)}
     total = len(seq)
@@ -132,7 +151,9 @@ def base_composition(sequence: str) -> Dict[str, object]:
 def gc_content(sequence: str) -> float:
     """Return the GC content as a percentage (0-100).
 
-    Ambiguous bases (N) are excluded from the denominator.
+    Ambiguous bases (N) are excluded from the denominator, because counting
+    them as non-GC would understate the GC fraction of the known bases. A
+    sequence with no unambiguous bases returns 0.0.
     """
     seq = validate_sequence(sequence)
     unambiguous = [b for b in seq if b in "ACGT"]
@@ -143,8 +164,11 @@ def gc_content(sequence: str) -> float:
 
 
 def molecular_weight(sequence: str) -> float:
-    """Return the approximate molecular weight of a single-stranded DNA
-    sequence in Daltons."""
+    """Return the approximate molecular weight of single-stranded DNA, in Da.
+
+    This is an approximation. Ambiguous bases (N) have no defined mass and
+    contribute zero, so sequences containing N will be underestimated.
+    """
     seq = validate_sequence(sequence)
     weight = sum(_DNA_RESIDUE_MASS.get(b, 0.0) for b in seq)
     return weight - _WATER_MASS * max(len(seq) - 1, 0)
@@ -152,6 +176,8 @@ def molecular_weight(sequence: str) -> float:
 
 def kmer_counts(sequence: str, k: int = 3) -> Dict[str, int]:
     """Return counts of every k-mer in the sequence.
+
+    If k is longer than the sequence, an empty mapping is returned.
 
     Raises:
         ValueError: if k is not a positive integer.
@@ -171,7 +197,10 @@ def kmer_counts(sequence: str, k: int = 3) -> Dict[str, int]:
 # --------------------------------------------------------------------------
 
 def reverse_complement(sequence: str) -> str:
-    """Return the reverse complement of a DNA sequence."""
+    """Return the reverse complement of a DNA sequence.
+
+    Accepts mixed case and ambiguous bases (N); N complements to N.
+    """
     return clean_sequence(sequence).translate(_COMPLEMENT)[::-1]
 
 
@@ -182,6 +211,10 @@ def transcribe(sequence: str) -> str:
 
 def translate(sequence: str, frame: int = 0, stop_at_stop: bool = False) -> str:
     """Translate a DNA sequence into a protein string.
+
+    Codons that are not in the standard table (for example ones containing N)
+    are rendered as 'X', which is the conventional symbol for an unknown
+    residue.
 
     Args:
         sequence: DNA sequence (may contain U, which is treated as T).
@@ -208,14 +241,16 @@ def translate(sequence: str, frame: int = 0, stop_at_stop: bool = False) -> str:
 # Feature finding
 # --------------------------------------------------------------------------
 
-def _orfs_on_strand(seq: str, strand: str) -> List[Dict[str, object]]:
-    """Find all ATG-to-stop ORFs on one strand, in original coordinates."""
+def _orfs_on_strand(
+    seq: str, strand: str, start_codons: Set[str]
+) -> List[Dict[str, object]]:
+    """Find ATG-to-stop ORFs on one strand, reported in original coordinates."""
     n = len(seq)
     hits: List[Dict[str, object]] = []
     for frame in range(3):
         i = frame
         while i + 3 <= n:
-            if seq[i:i + 3] != START_CODON:
+            if seq[i:i + 3] not in start_codons:
                 i += 3
                 continue
             j = i
@@ -224,7 +259,7 @@ def _orfs_on_strand(seq: str, strand: str) -> List[Dict[str, object]]:
                     break
                 j += 3
             else:
-                j = None  # no in-frame stop codon before the end
+                j = None  # no in-frame stop codon before the end of the sequence
             if j is None:
                 i = n
                 continue
@@ -247,12 +282,22 @@ def _orfs_on_strand(seq: str, strand: str) -> List[Dict[str, object]]:
     return hits
 
 
-def find_orfs(sequence: str, min_aa: int = 1) -> List[Dict[str, object]]:
-    """Find open reading frames (ATG ... stop) on both strands.
+def find_orfs(
+    sequence: str,
+    min_aa: int = 1,
+    start_codons: Optional[Iterable[str]] = None,
+) -> List[Dict[str, object]]:
+    """Find open reading frames on both strands.
+
+    An ORF runs from a start codon to the first in-frame stop codon. ORFs are
+    non-overlapping within a reading frame: after a stop codon is found,
+    scanning resumes after it.
 
     Args:
         sequence: DNA sequence.
         min_aa: minimum ORF length in amino acids (excluding the stop).
+        start_codons: codons that may start an ORF. Defaults to ATG only.
+            Bacterial sequences often use GTG or TTG as alternative starts.
 
     Returns:
         A list of dicts sorted by descending length, each with strand, frame,
@@ -260,15 +305,24 @@ def find_orfs(sequence: str, min_aa: int = 1) -> List[Dict[str, object]]:
     """
     if min_aa < 1:
         raise ValueError("min_aa must be >= 1.")
+    starts = {clean_sequence(c) for c in (start_codons or START_CODONS)}
+    bad = [c for c in starts if len(c) != 3]
+    if bad:
+        raise ValueError(f"Start codons must be 3 bases long: {bad}")
     seq = validate_sequence(sequence)
-    hits = _orfs_on_strand(seq, "+") + _orfs_on_strand(reverse_complement(seq), "-")
+    hits = (
+        _orfs_on_strand(seq, "+", starts)
+        + _orfs_on_strand(reverse_complement(seq), "-", starts)
+    )
     hits = [h for h in hits if h["length_aa"] >= min_aa]
     hits.sort(key=lambda h: (-int(h["length_aa"]), int(h["start"])))
     return hits
 
 
 def find_restriction_sites(
-    sequence: str, enzymes: Dict[str, str] | None = None
+    sequence: str,
+    enzymes: Optional[Dict[str, str]] = None,
+    circular: bool = False,
 ) -> Dict[str, List[int]]:
     """Return the 1-based start positions of restriction sites on the
     forward strand.
@@ -277,19 +331,28 @@ def find_restriction_sites(
         sequence: DNA sequence.
         enzymes: mapping of enzyme name to recognition site; defaults to
             RESTRICTION_ENZYMES.
+        circular: if True, also detect sites that span the origin of a
+            circular molecule. Positions are still reported within 1..len.
     """
     seq = validate_sequence(sequence)
     enzymes = enzymes or RESTRICTION_ENZYMES
+    n = len(seq)
     result: Dict[str, List[int]] = {}
     for name, site in enzymes.items():
         site = clean_sequence(site)
-        positions = []
-        start = seq.find(site)
+        if not site:
+            continue
+        # For circular molecules, search a doubled sequence but only keep
+        # positions that begin inside the original molecule.
+        search_space = seq + seq[: len(site) - 1] if circular else seq
+        positions: List[int] = []
+        start = search_space.find(site)
         while start != -1:
-            positions.append(start + 1)
-            start = seq.find(site, start + 1)
+            if start < n:
+                positions.append(start + 1)
+            start = search_space.find(site, start + 1)
         if positions:
-            result[name] = positions
+            result[name] = sorted(set(positions))
     return result
 
 
@@ -300,16 +363,26 @@ def find_restriction_sites(
 def read_fasta_string(text: str) -> Dict[str, str]:
     """Parse FASTA text into an ordered mapping of header -> sequence.
 
+    Handles CRLF line endings, blank lines and lowercase sequence. Every
+    record is validated, so an invalid character is reported together with the
+    record it came from.
+
     Raises:
-        ValueError: if no FASTA record is found.
+        ValueError: if no FASTA record is found, if sequence data appears
+            before the first header, or if a record fails validation.
     """
     records: Dict[str, str] = {}
-    name: str | None = None
+    name: Optional[str] = None
     chunks: List[str] = []
 
     def flush() -> None:
-        if name is not None:
-            records[name] = clean_sequence("".join(chunks))
+        if name is None:
+            return
+        raw = "".join(chunks)
+        try:
+            records[name] = validate_sequence(raw)
+        except ValueError as exc:
+            raise ValueError(f"In record {name!r}: {exc}") from exc
 
     for line in text.splitlines():
         line = line.strip()
@@ -321,7 +394,10 @@ def read_fasta_string(text: str) -> Dict[str, str]:
             chunks = []
         else:
             if name is None:
-                raise ValueError("Sequence data found before any '>' header.")
+                raise ValueError(
+                    "Sequence data found before any '>' header. "
+                    "A FASTA file must start with a header line."
+                )
             chunks.append(line)
     flush()
 
