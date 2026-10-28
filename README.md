@@ -283,7 +283,9 @@ fail validation. CI runs them on Python 3.9, 3.10, 3.11 and 3.12.
 harness: it boots the script, loads and analyses a sequence, opens every section,
 and checks the friendly error path, the Clear button and multi-record FASTA
 handling. The module skips itself when Streamlit is not installed, so the core
-test job stays dependency-free.
+matrix stays dependency-free; CI runs these tests in a separate job on Python
+3.12 with the web dependencies installed, and that job fails if any of them is
+skipped rather than executed.
 
 ## Deployment
 
