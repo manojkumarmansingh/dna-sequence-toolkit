@@ -9,6 +9,7 @@
 [![tests](https://github.com/manojkumarmansingh/dna-sequence-toolkit/actions/workflows/tests.yml/badge.svg)](https://github.com/manojkumarmansingh/dna-sequence-toolkit/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
+[![Live app](https://img.shields.io/badge/live%20app-dnasequencetoolkit.streamlit.app-0B1F3A.svg)](https://dnasequencetoolkit.streamlit.app/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-app-FF4B4B.svg)](app.py)
 
 </div>
@@ -90,6 +91,10 @@ streamlit run app.py
 ```
 
 ## Web app
+
+**Live app:** <https://dnasequencetoolkit.streamlit.app/>
+
+To run it yourself:
 
 ```bash
 streamlit run app.py
@@ -292,7 +297,10 @@ The web app is ready for Streamlit Community Cloud. Short version:
 Full steps, including how to test the build locally and how to capture
 screenshots, are in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-> This app is **not** deployed yet. No live URL is claimed here.
+**Current status:** deployed on Streamlit Community Cloud at
+<https://dnasequencetoolkit.streamlit.app/>, built from `main` with `app.py` as
+the entry point. A push to `main` triggers a redeploy; the app restarts in about
+a minute.
 
 ## Suggested repository topics
 
